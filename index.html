@@ -1,58 +1,34 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>マンデルブロ集合ズーム</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 20px;
-      font-family: sans-serif;
-      text-align: center;
-    }
-
-    /* 箱をレスポンシブに制限 */
+    * { box-sizing: border-box; margin:0; padding:0 }
+    body { padding:20px; font-family:sans-serif; text-align:center }
     #mandelbrot-box {
-      width: 80vw;
-      max-width: 600px;
-      height: 60vh;
-      max-height: 400px;
-      margin: 0 auto;
-      border: 2px solid #333;
-      position: relative;
-      overflow: hidden;
+      width:80vw; max-width:600px;
+      height:60vh; max-height:400px;
+      margin:0 auto; border:2px solid #333;
+      overflow:hidden; position:relative;
     }
-
-    /* 箱内で Canvas を全面表示 */
     #mandelbrot-box canvas {
-      display: block;
-      width: 100%;
-      height: 100%;
+      width:100%; height:100%; display:block;
     }
-
-    /* 戻るリンク */
     #back-link {
-      display: inline-block;
-      margin: 20px auto 0;
-      font-size: 0.9rem;
-      text-decoration: none;
-      color: #06c;
+      display:inline-block; margin:16px auto;
+      font-size:.9rem; color:#06c; text-decoration:none;
     }
-    #back-link:hover {
-      text-decoration: underline;
-    }
+    #back-link:hover { text-decoration:underline }
   </style>
 </head>
 <body>
 
   <h1>マンデルブロ集合ズーム</h1>
-
   <div id="mandelbrot-box">
     <canvas id="c"></canvas>
   </div>
-
-  <!-- 戻るリンク -->
   <a id="back-link" href="https://wiki3.jp/iwakuni-mathclub" target="_blank">
     ▶︎ 岩校数研トップへ戻る
   </a>
