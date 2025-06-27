@@ -1,44 +1,33 @@
 // mandelbrot.js
-
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.24.0/firebase-app.js"; // もし要らなければ消してください
-
 const canvas = document.getElementById('c');
 const ctx    = canvas.getContext('2d');
 
-let w, h;
-const realSpan0 = 3.5;  // 初期の横幅（ズーム1.0時の実数レンジ）
-let zoom    = 1;
-let offsetX = -0.5;     // 真ん中に来るように初期オフセット
-let offsetY =  0;
-let reFactor, imFactor;
+// 実部の幅（ズーム=1 時の範囲）
+const BASE_REAL_WIDTH = 3.5;
 
-// タッチ用ステート（ピンチ焦点対応）
-let touchMode = null,
-    startDist = 0,
-    startZoom = 1,
-    startOffX = 0,
-    startOffY = 0,
-    midX = 0,
-    midY = 0;
+// 描画ステート
+let width, height, dpr;
+let zoom = 1;
+let offsetX = -0.5, offsetY = 0;
 
-// 再計算用
+// 図形再計算用
+let realFactor, imagFactor;
 function updateFactors() {
-  // 拡大倍率を反映した実数範囲
-  const realWidth  = realSpan0 / zoom;
-  const realHeight = realWidth * (h / w);
-  reFactor = realWidth  / (w - 1);
-  imFactor = realHeight / (h - 1);
+  const realWidth  = BASE_REAL_WIDTH / zoom;
+  const realHeight = realWidth * (height / width);
+  realFactor = realWidth  / (width - 1);
+  imagFactor = realHeight / (height - 1);
 }
 
-// 描画
+// 描画ルーチン
 function draw() {
   updateFactors();
-  const img     = ctx.createImageData(w, h);
+  const img = ctx.createImageData(width, height);
   const maxIter = 100;
-  for (let py = 0; py < h; py++) {
-    const c_im = offsetY + (h/2 - py) * imFactor;
-    for (let px = 0; px < w; px++) {
-      const c_re = offsetX + (px - w/2) * reFactor;
+  for (let py = 0; py < height; py++) {
+    const c_im = offsetY + (height/2 - py) * imagFactor;
+    for (let px = 0; px < width; px++) {
+      const c_re = offsetX + (px - width/2) * realFactor;
       let x = 0, y = 0, iter = 0;
       while (x*x + y*y <= 4 && iter < maxIter) {
         const x2 = x*x - y*y + c_re;
@@ -46,7 +35,7 @@ function draw() {
         x = x2;
         iter++;
       }
-      const p   = (py * w + px) * 4;
+      const p = 4*(py*width + px);
       const col = iter === maxIter ? 0 : 255 - Math.floor(255 * iter / maxIter);
       img.data[p  ] = col;
       img.data[p+1] = col;
@@ -57,121 +46,103 @@ function draw() {
   ctx.putImageData(img, 0, 0);
 }
 
-// リサイズ＆Retina対応
+// サイズ調整＆初期描画
 function resize() {
-  const cw  = window.innerWidth;
-  const ch  = window.innerHeight;
-  const dpr = window.devicePixelRatio || 1;
-  canvas.style.width  = cw + 'px';
-  canvas.style.height = ch + 'px';
-  canvas.width  = cw * dpr;
-  canvas.height = ch * dpr;
-  w = canvas.width;
-  h = canvas.height;
+  // CSS 上のサイズ
+  const box = canvas.parentElement.getBoundingClientRect();
+  dpr = window.devicePixelRatio || 1;
+  canvas.style.width  = `${box.width}px`;
+  canvas.style.height = `${box.height}px`;
+  canvas.width  = Math.floor(box.width  * dpr);
+  canvas.height = Math.floor(box.height * dpr);
+  width  = canvas.width;
+  height = canvas.height;
+  ctx.scale(dpr, dpr);
   draw();
 }
 
-window.addEventListener('DOMContentLoaded', resize);
 window.addEventListener('resize', resize);
+window.addEventListener('DOMContentLoaded', resize);
 
-// ホイールズーム（キャンバス中心でズーム）
+// ズームの焦点を「操作座標」に合わせる
+function getEventPos(e) {
+  const r = canvas.getBoundingClientRect();
+  const sx = (e.clientX - r.left)  * (canvas.width  / r.width);
+  const sy = (e.clientY - r.top)   * (canvas.height / r.height);
+  return { x: sx, y: sy };
+}
+
+// ホイールズーム（操作位置を焦点に）
 canvas.addEventListener('wheel', e => {
   e.preventDefault();
-  // キャンバス中心座標
-  const cx = w/2;
-  const cy = h/2;
-  // 現在中心点の実軸／虚軸値
+  const { x, y } = getEventPos(e);
   updateFactors();
-  const real0 = offsetX + (cx - w/2) * reFactor;
-  const imag0 = offsetY + (h/2 - cy) * imFactor;
-  // ズーム適用
+  const re0 = offsetX + (x - width/2) * realFactor;
+  const im0 = offsetY + (height/2 - y) * imagFactor;
+  // ズーム係数
   zoom *= e.deltaY < 0 ? 1.2 : 1/1.2;
-  // 再計算後に中心点を real0/imag0に固定
   updateFactors();
-  offsetX = real0 - (cx - w/2) * reFactor;
-  offsetY = imag0 - (h/2 - cy) * imFactor;
+  // 焦点位置を維持
+  offsetX = re0 - (x - width/2) * realFactor;
+  offsetY = im0 - (height/2 - y) * imagFactor;
   draw();
 });
 
 // マウスドラッグでパン
 canvas.addEventListener('mousedown', e => {
-  const sx = e.clientX, sy = e.clientY;
+  e.preventDefault();
+  const start = getEventPos(e);
   const oX = offsetX, oY = offsetY;
   function onMove(ev) {
-    const dx = ev.clientX - sx;
-    const dy = ev.clientY - sy;
-    offsetX = oX - dx * reFactor;
-    offsetY = oY + dy * imFactor;
+    const cur = getEventPos(ev);
+    offsetX = oX - (cur.x - start.x) * realFactor;
+    offsetY = oY + (cur.y - start.y) * imagFactor;
     draw();
   }
   window.addEventListener('mousemove', onMove);
-  window.addEventListener('mouseup', () => {
-    window.removeEventListener('mousemove', onMove);
-  }, { once: true });
+  window.addEventListener('mouseup', ()=>window.removeEventListener('mousemove', onMove), { once:true });
 });
 
-// タッチスタート（パン or ピンチ／焦点記録）
+// タッチ（パン／ピンチ）対応
+let touchMode, startDist, startZoom, touchStart, startOffX, startOffY;
 canvas.addEventListener('touchstart', e => {
   e.preventDefault();
   if (e.touches.length === 1) {
     touchMode = 'pan';
-    startOffX = offsetX;
-    startOffY = offsetY;
-    midX = e.touches[0].clientX * (canvas.width / canvas.clientWidth);
-    midY = e.touches[0].clientY * (canvas.height / canvas.clientHeight);
+    const p = getEventPos(e.touches[0]);
+    touchStart = p;
+    startOffX = offsetX; startOffY = offsetY;
   }
   else if (e.touches.length === 2) {
     touchMode = 'pinch';
-    // ピンチの焦点
-    const x0 = e.touches[0].clientX * (canvas.width / canvas.clientWidth);
-    const y0 = e.touches[0].clientY * (canvas.height / canvas.clientHeight);
-    const x1 = e.touches[1].clientX * (canvas.width / canvas.clientWidth);
-    const y1 = e.touches[1].clientY * (canvas.height / canvas.clientHeight);
-    midX = (x0 + x1) / 2;
-    midY = (y0 + y1) / 2;
-    // 初期距離とズーム・オフセット記録
-    const dx = x0 - x1, dy = y0 - y1;
-    startDist = Math.hypot(dx, dy);
+    const p0 = getEventPos(e.touches[0]);
+    const p1 = getEventPos(e.touches[1]);
+    touchStart = { x:(p0.x+p1.x)/2, y:(p0.y+p1.y)/2 };
+    startDist = Math.hypot(p0.x-p1.x, p0.y-p1.y);
     startZoom = zoom;
-    startOffX = offsetX;
-    startOffY = offsetY;
+    startOffX = offsetX; startOffY = offsetY;
   }
 });
-
-// タッチムーブ
 canvas.addEventListener('touchmove', e => {
   e.preventDefault();
-  if (touchMode === 'pan' && e.touches.length === 1) {
-    const nx = e.touches[0].clientX * (canvas.width / canvas.clientWidth);
-    const ny = e.touches[0].clientY * (canvas.height / canvas.clientHeight);
-    const dx = nx - midX;
-    const dy = ny - midY;
-    offsetX = startOffX - dx * reFactor;
-    offsetY = startOffY + dy * imFactor;
+  if (touchMode === 'pan' && e.touches.length===1) {
+    const cur = getEventPos(e.touches[0]);
+    offsetX = startOffX - (cur.x - touchStart.x) * realFactor;
+    offsetY = startOffY + (cur.y - touchStart.y) * imagFactor;
     draw();
   }
-  else if (touchMode === 'pinch' && e.touches.length === 2) {
-    // 距離変化からズーム
-    const dx = e.touches[0].clientX * (canvas.width / canvas.clientWidth)
-             - e.touches[1].clientX * (canvas.width / canvas.clientWidth);
-    const dy = e.touches[0].clientY * (canvas.height / canvas.clientHeight)
-             - e.touches[1].clientY * (canvas.height / canvas.clientHeight);
-    const dist = Math.hypot(dx, dy);
-    // 焦点 real0/imag0
+  else if (touchMode === 'pinch' && e.touches.length===2) {
+    const p0 = getEventPos(e.touches[0]);
+    const p1 = getEventPos(e.touches[1]);
+    const dist = Math.hypot(p0.x-p1.x, p0.y-p1.y);
     updateFactors();
-    const real0 = offsetX + (midX - w/2) * reFactor;
-    const imag0 = offsetY + (h/2 - midY) * imFactor;
-    // 新ズーム
+    const re0 = offsetX + (touchStart.x - width/2) * realFactor;
+    const im0 = offsetY + (height/2 - touchStart.y) * imagFactor;
     zoom = startZoom * dist / startDist;
-    // 新オフセット
     updateFactors();
-    offsetX = real0 - (midX - w/2) * reFactor;
-    offsetY = imag0 - (h/2 - midY) * imFactor;
+    offsetX = re0 - (touchStart.x - width/2) * realFactor;
+    offsetY = im0 - (height/2 - touchStart.y) * imagFactor;
     draw();
   }
 });
-
-// タッチエンド
-canvas.addEventListener('touchend', e => {
-  if (e.touches.length === 0) touchMode = null;
-});
+canvas.addEventListener('touchend', e => { if(e.touches.length===0) touchMode=null; });
