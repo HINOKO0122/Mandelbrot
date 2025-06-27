@@ -13,25 +13,43 @@ window.addEventListener('resize', resize);
 resize();
 
 // マンデルブロマップを計算して描画
-function draw(cx, cy, scale) {
+function draw(offsetX, offsetY, scale) {
   const maxIter = 100;
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      let zx = (x - w/2)/ (w/scale) + cx;
-      let zy = (y - h/2)/ (h/scale) + cy;
-      let i = 0;
-      while (zx*zx + zy*zy < 4 && i < maxIter) {
-        const xt = zx*zx - zy*zy + cx;
-        zy = 2*zx*zy + cy;
-        zx = xt;
-        i++;
+  // 画面全体を走査
+  for (let py = 0; py < h; py++) {
+    for (let px = 0; px < w; px++) {
+      // 1) このピクセルの「複素平面での座標 c」
+      const c_re = (px - w/2) / (w/scale) + offsetX;
+      const c_im = (py - h/2) / (h/scale) + offsetY;
+
+      // 2) z を 0 で初期化
+      let x = 0,
+          y = 0,
+          iter = 0;
+
+      // 3) 反復計算
+      while (x*x + y*y <= 4 && iter < maxIter) {
+        const x2 = x*x - y*y + c_re;
+        y = 2*x*y + c_im;
+        x = x2;
+        iter++;
       }
-      const p = (y*w + x)*4;
-      const c = i === maxIter ? 0 : 255 - Math.floor(255*i/maxIter);
-      img.data[p  ] = c;
-      img.data[p+1] = c;
-      img.data[p+2] = c;
-      img.data[p+3] = 255;
+
+      // 4) 色決め
+      const pix = (py * w + px) * 4;
+      if (iter === maxIter) {
+        // 黒
+        img.data[pix]   = 0;
+        img.data[pix+1] = 0;
+        img.data[pix+2] = 0;
+      } else {
+        // 発散までのイテレーション数でグレースケール
+        const c = 255 - Math.floor(255 * iter / maxIter);
+        img.data[pix]   = c;
+        img.data[pix+1] = c;
+        img.data[pix+2] = c;
+      }
+      img.data[pix+3] = 255;
     }
   }
   ctx.putImageData(img, 0, 0);
