@@ -1,17 +1,46 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
   <meta charset="UTF-8">
   <title>マンデルブロ集合ズーム</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
   <style>
-    /* Canvas をウィンドウいっぱいに表示 */
-    html, body { margin:0; padding:0; height:100%; overflow:hidden; }
-    canvas { display:block; }
+    body { margin:20px; font-family:sans-serif; text-align:center; }
+    /* 箱を固定サイズに */
+    #mandelbrot-box {
+      width: 600px;
+      height: 400px;
+      margin: 0 auto;
+      border: 2px solid #333;
+      position: relative;
+    }
+    /* 箱内で Canvas を全面表示 */
+    #mandelbrot-box canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    /* 戻るリンク */
+    #back-link {
+      display: block;
+      margin-top: 16px;
+      font-size: 0.9rem;
+    }
   </style>
 </head>
 <body>
-  <canvas id="c"></canvas>
+
+  <h1>マンデルブロ集合ズーム</h1>
+
+  <div id="mandelbrot-box">
+    <canvas id="c"></canvas>
+  </div>
+
+  <!-- 岩校数研トップへのリンク -->
+  <a id="back-link" href="https://wiki3.jp/iwakuni-mathclub" target="_blank">
+    ▶︎ 岩校数研トップへ戻る
+  </a>
+
   <script src="mandelbrot.js"></script>
 </body>
 </html>
