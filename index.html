@@ -3,15 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <title>マンデルブロ集合ズーム</title>
-  <link rel="stylesheet" href="style.css">
   <style>
-    body, html { margin:0; height:100%; overflow:hidden }
-    canvas { display:block; width:100%; height:100% }
+    /* Canvas をウィンドウいっぱいに表示 */
+    html, body { margin:0; padding:0; height:100%; overflow:hidden; }
+    canvas { display:block; }
   </style>
 </head>
 <body>
-  <canvas id="c" width="800" height="600"></canvas>
-  <!-- 同じフォルダにある mandelbrot.js を読み込む -->
+  <canvas id="c"></canvas>
   <script src="mandelbrot.js"></script>
 </body>
 </html>
