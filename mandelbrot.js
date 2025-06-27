@@ -1,14 +1,25 @@
-// === グローバル変数 ===
-const canvas   = document.getElementById('c');
-const ctx      = canvas.getContext('2d');
-let w, h;                       // キャンバス幅・高さ (px)
-const realSpan = 3.5;           // 初期の複素平面横幅
-let zoom    = 1,                // ズーム倍率
-    offsetX = -0.5,             // 実数軸中心
-    offsetY =  0;               // 虚数軸中心
-let reFactor, imFactor;         // 画素→複素平面マッピング係数
+// mandelbrot.js
 
-// 縦横比を考慮して reFactor/imFactor を計算
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+
+let w, h;
+const realSpan = 3.5;
+let zoom    = 1,
+    offsetX = -0.5,
+    offsetY = 0;
+let reFactor, imFactor;
+
+// タッチ用ステート
+let touchMode = null,
+    startDist = 0,
+    startZoom = 1,
+    startOffX,
+    startOffY,
+    startX,
+    startY;
+
+// マッピング係数を更新
 function updateFactors() {
   const realWidth  = realSpan / zoom;
   const realHeight = realWidth * (h / w);
@@ -33,7 +44,7 @@ function draw() {
         x = x2;
         iter++;
       }
-      const p = (py * w + px) * 4;
+      const p   = (py * w + px) * 4;
       const col = iter === maxIter
                 ? 0
                 : 255 - Math.floor(255 * iter / maxIter);
@@ -47,14 +58,26 @@ function draw() {
   ctx.putImageData(img, 0, 0);
 }
 
-// リサイズ対応
+// リサイズ＆Retina対応
 function resize() {
-  w = canvas.width  = window.innerWidth;
-  h = canvas.height = window.innerHeight;
+  const cw  = window.innerWidth;
+  const ch  = window.innerHeight;
+  const dpr = window.devicePixelRatio || 1;
+
+  // CSS サイズ
+  canvas.style.width  = cw + 'px';
+  canvas.style.height = ch + 'px';
+  // 実ピクセル解像度
+  canvas.width  = cw * dpr;
+  canvas.height = ch * dpr;
+
+  w = canvas.width;
+  h = canvas.height;
   draw();
 }
-window.addEventListener('resize', resize);
+
 window.addEventListener('DOMContentLoaded', resize);
+window.addEventListener('resize', resize);
 
 // マウスホイールでズーム
 canvas.addEventListener('wheel', e => {
@@ -63,21 +86,64 @@ canvas.addEventListener('wheel', e => {
   draw();
 });
 
-// ドラッグでパン
+// マウスドラッグでパン
 canvas.addEventListener('mousedown', e => {
-  const startX = e.clientX, startY = e.clientY;
-  const ox = offsetX, oy = offsetY;
+  startX = e.clientX;
+  startY = e.clientY;
+  startOffX = offsetX;
+  startOffY = offsetY;
 
-  function onmove(ev) {
+  function onMove(ev) {
     const dx = ev.clientX - startX;
     const dy = ev.clientY - startY;
-    offsetX = ox - dx * reFactor;
-    offsetY = oy + dy * imFactor;
+    offsetX = startOffX - dx * reFactor;
+    offsetY = startOffY + dy * imFactor;
     draw();
   }
 
-  window.addEventListener('mousemove', onmove);
+  window.addEventListener('mousemove', onMove);
   window.addEventListener('mouseup', () => {
-    window.removeEventListener('mousemove', onmove);
+    window.removeEventListener('mousemove', onMove);
   }, { once: true });
+});
+
+// タッチスタート（パン or ピンチ判定）
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  if (e.touches.length === 1) {
+    touchMode  = 'pan';
+    startX     = e.touches[0].clientX;
+    startY     = e.touches[0].clientY;
+    startOffX  = offsetX;
+    startOffY  = offsetY;
+  } else if (e.touches.length === 2) {
+    touchMode  = 'pinch';
+    const dx    = e.touches[0].clientX - e.touches[1].clientX;
+    const dy    = e.touches[0].clientY - e.touches[1].clientY;
+    startDist   = Math.hypot(dx, dy);
+    startZoom   = zoom;
+  }
+});
+
+// タッチムーブ
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (touchMode === 'pan' && e.touches.length === 1) {
+    const dx = e.touches[0].clientX - startX;
+    const dy = e.touches[0].clientY - startY;
+    offsetX = startOffX - dx * reFactor;
+    offsetY = startOffY + dy * imFactor;
+    draw();
+  } else if (touchMode === 'pinch' && e.touches.length === 2) {
+    const dx   = e.touches[0].clientX - e.touches[1].clientX;
+    const dy   = e.touches[0].clientY - e.touches[1].clientY;
+    const dist = Math.hypot(dx, dy);
+    zoom = startZoom * dist / startDist;
+    draw();
+  }
+});
+
+// タッチエンド
+canvas.addEventListener('touchend', e => {
+  if (e.touches.length === 0) touchMode = null;
 });
