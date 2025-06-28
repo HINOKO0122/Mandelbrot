@@ -2,37 +2,62 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>マンデルブロ集合ズーム</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MAKE10 パズル</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
-    * { box-sizing: border-box; margin:0; padding:0 }
-    body { padding:20px; font-family:sans-serif; text-align:center }
-    #mandelbrot-box {
-      width:80vw; max-width:600px;
-      height:60vh; max-height:400px;
-      margin:0 auto; border:2px solid #333;
-      overflow:hidden; position:relative;
+    * { box-sizing:border-box }
+    body { margin:0; padding:20px; font-family:sans-serif; text-align:center }
+    button {
+      padding:8px 12px; margin:4px; font-size:1rem; min-width:60px;
     }
-    #mandelbrot-box canvas {
-      width:100%; height:100%; display:block;
-    }
-    #back-link {
-      display:inline-block; margin:16px auto;
-      font-size:.9rem; color:#06c; text-decoration:none;
-    }
-    #back-link:hover { text-decoration:underline }
+    button.selected { background:#f88; color:#fff }
+    #numbers,#operators { margin:10px 0 }
+    #operators button { width:48px }
+    #display { margin:10px auto; padding:10px; border:1px solid #ccc; min-height:1.5em }
+    #current { color:#555; margin-bottom:10px }
+    #status,#timer { margin:6px 0; font-weight:bold }
+    #reset { margin-top:10px }
+    #finish { display:none; margin-top:20px }
+    #ranking { margin-top:20px; max-width:300px; margin-left:auto; margin-right:auto; text-align:left }
+    #ranking h2 { text-align:center }
+    #ranking table { width:100%; border-collapse:collapse }
+    #ranking th,#ranking td { border:1px solid #ccc; padding:6px; text-align:center }
   </style>
 </head>
 <body>
 
-  <h1>マンデルブロ集合ズーム</h1>
-  <div id="mandelbrot-box">
-    <canvas id="c"></canvas>
-  </div>
-  <a id="back-link" href="https://wiki3.jp/iwakuni-mathclub" target="_blank">
-    ▶︎ 岩校数研トップへ戻る
-  </a>
+  <h1>MAKE10 パズル</h1>
+  <div id="status"></div>
+  <div id="timer"></div>
 
-  <script src="mandelbrot.js"></script>
+  <div id="numbers"></div>
+  <div id="operators">
+    <button data-op="+">＋</button>
+    <button data-op="-">－</button>
+    <button data-op="*">×</button>
+    <button data-op="/">÷</button>
+  </div>
+
+  <div id="display">式を作ってね</div>
+  <div id="current">計算結果：－</div>
+
+  <button id="reset">リセット</button>
+
+  <div id="finish">
+    <h2>🎉 クリア！🎉</h2>
+    <p>あなたのタイム：<span id="finalTime">0.00</span> 秒</p>
+  </div>
+
+  <div id="ranking">
+    <h2>ランキング</h2>
+    <table>
+      <thead>
+        <tr><th>順位</th><th>タイム</th></tr>
+      </thead>
+      <tbody id="rankingBody"></tbody>
+    </table>
+  </div>
+
+  <script src="make10.js"></script>
 </body>
 </html>
