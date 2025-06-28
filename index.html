@@ -3,43 +3,32 @@
 <head>
   <meta charset="UTF-8" />
   <title>マンデルブロ集合ズーム</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     * { box-sizing: border-box; margin:0; padding:0 }
     body { padding:20px; font-family:sans-serif; text-align:center }
     #mandelbrot-box {
-      width: 100%;
-      max-width: 600px;
-      height: 60vh;
-      max-height: 400px;
-      margin: 0 auto;
-      border: 2px solid #333;
-      background: #eee;       /* キャンバス領域の目印 */
-      position: relative;
+      width:80vw; max-width:600px;
+      height:60vh; max-height:400px;
+      margin:0 auto; border:2px solid #333;
+      overflow:hidden; position:relative;
     }
     #mandelbrot-box canvas {
-      width: 100%;
-      height: 100%;
-      display: block;
+      width:100%; height:100%; display:block;
     }
     #back-link {
-      display: inline-block;
-      margin: 16px auto;
-      font-size: 0.9rem;
-      color: #06c;
-      text-decoration: none;
+      display:inline-block; margin:16px auto;
+      font-size:.9rem; color:#06c; text-decoration:none;
     }
-    #back-link:hover { text-decoration: underline }
+    #back-link:hover { text-decoration:underline }
   </style>
 </head>
 <body>
 
   <h1>マンデルブロ集合ズーム</h1>
-
   <div id="mandelbrot-box">
     <canvas id="c"></canvas>
   </div>
-
   <a id="back-link" href="https://wiki3.jp/iwakuni-mathclub" target="_blank">
     ▶︎ 岩校数研トップへ戻る
   </a>
